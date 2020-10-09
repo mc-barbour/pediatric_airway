@@ -33,9 +33,7 @@ for i in range(Nfiles):
 	disp[:,:,i],X[:,:,i] = extract_surface_data(files[i])
 
 
-
-
-pointID=10000
+pointID=50000
 
 
 plt.figure()

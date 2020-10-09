@@ -4,7 +4,12 @@ from read_vtk import *
 import glob
 from natsort import natsorted
 import matplotlib.pyplot as plt
+"""
+Created by Michael Barbour. 10/2020
 
+Script to read in vtk polydata with displacement scalars and visualize displacment magnitude.
+Also can visualize cloud of polydata points specified by the user
+"""
 
 # Class for VTK point cloud
 
@@ -34,7 +39,6 @@ class vtkPointCloud:
 
 files = glob.glob('../Patient_Data/4DCT_109/Attempt3/displacement_surfaces/*.vtk')
 files=natsorted(files)
-
 
 
 #Load first file to access number of points
