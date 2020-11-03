@@ -39,12 +39,12 @@ print(files)
 Nfiles = len(files)
 
 colors=px.colors.cyclical.IceFire
-colors=np.append(colors,colors)
+# colors=np.append(colors,colors)
 print(len(colors))
 
 # Extract slice from every time step
 fig=go.Figure()
-for i in range(10):
+for i in range(8):
 	reader=vtkDataSetReader()
 	reader.SetFileName(files[i])
 	reader.ReadAllVectorsOn()
@@ -70,6 +70,8 @@ for i in range(10):
 
 
 	fig.add_trace(go.Scatter3d(x=X[0,:],y=X[1,:],z=X[2,:],mode="markers",marker_color=colors[i]))
+
+fig.update_layout(scene=dict(aspectmode='data',aspectratio=dict(x=1,y=1,z=1)))
 fig.show()
 
 
