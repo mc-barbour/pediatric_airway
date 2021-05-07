@@ -33,6 +33,7 @@ cutEdges = vtk.vtkCutter()
 cutEdges.SetInputData(data)
 cutEdges.SetCutFunction(plane)
 cutEdges.GenerateCutScalarsOn()
+cutEdges.GenerateTrianglesOn()
 # cutEdges.SetValue(0, 0.5)
 cutStrips = vtk.vtkStripper()
 cutStrips.SetInputConnection(cutEdges.GetOutputPort())
@@ -48,6 +49,16 @@ cutBoundary.SetInputData(cutPoly)
 cutBoundary.Update()
 
 # 1. Triangulate the surface - vtktriangle
+
+deluanay = vtkDelaunay2D()
+deluanay.SetInputData(cutPoly)
+
+massFilter=vtkMassProperties()
+massFilter.SetInputConnection(deluanay.GetOutputPort())
+massFilter.Update()
+area=massFilter.GetSurfaceArea()
+print(area)
+
 # 2. Compute the area - vtkMassProperties
 
 pts=cutPoly.GetPoints()
@@ -60,7 +71,24 @@ for i in range(n):
 	X[1,i]=p[1]
 	X[2,i]=p[2]
 
-fig=go.Figure()
-fig.add_trace(go.Scatter3d(x=X[0,:],y=X[1,:],z=X[2,:],mode="markers"))
-fig.show()
+# fig=go.Figure()
+# fig.add_trace(go.Scatter3d(x=X[0,:],y=X[1,:],z=X[2,:],mode="markers"))
+# fig.show()
+
+
+plane_mapper=vtk.vtkPolyDataMapper()
+plane_mapper.SetInputConnection(deluanay.GetOutputPort())
+
+#create plane actor
+planeActor=vtk.vtkActor()
+planeActor.SetMapper(plane_mapper)
+renderer = vtk.vtkRenderer()
+renderWindow = vtk.vtkRenderWindow()
+renderWindow.AddRenderer(renderer)
+renderWindowInteractor = vtk.vtkRenderWindowInteractor()
+renderWindowInteractor.SetRenderWindow(renderWindow)
+
+renderer.AddActor(planeActor)
+renderWindow.Render()
+renderWindowInteractor.Start()
 

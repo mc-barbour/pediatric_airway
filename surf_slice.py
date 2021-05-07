@@ -31,78 +31,82 @@ def slice_extract(polydata,X0,N):
 	
 	return disp, contour_points, cutter
 
+def main():
+	files = glob.glob('../Patient_Data/4DCT_109/Attempt3/displacement_surfaces/*.vtk')
+	files=natsorted(files)
+	print(files)
 
-files = glob.glob('../Patient_Data/4DCT_109/Attempt3/displacement_surfaces/*.vtk')
-files=natsorted(files)
-print(files)
+	Nfiles = len(files)
 
-Nfiles = len(files)
+	colors=px.colors.cyclical.IceFire
+	# colors=np.append(colors,colors)
+	print(len(colors))
 
-colors=px.colors.cyclical.IceFire
-# colors=np.append(colors,colors)
-print(len(colors))
+	# Extract slice from every time step
+	fig=go.Figure()
+	for i in range(8):
+		reader=vtkDataSetReader()
+		reader.SetFileName(files[i])
+		reader.ReadAllVectorsOn()
+		reader.ReadAllScalarsOn()
+		reader.Update()
 
-# Extract slice from every time step
-fig=go.Figure()
-for i in range(8):
-	reader=vtkDataSetReader()
-	reader.SetFileName(files[i])
-	reader.ReadAllVectorsOn()
-	reader.ReadAllScalarsOn()
-	reader.Update()
+		# Load the data
+		data = reader.GetOutput()
 
-	# Load the data
-	data = reader.GetOutput()
+		# Get the number of points
+		plane_center=(-2.251,-288.365,-165.872)
+		plane_normal=(.04,-0.8,0.5)
 
-	# Get the number of points
-	plane_center=(-2.251,-288.365,-165.872)
-	plane_normal=(.04,-0.8,0.5)
-
-	contour_disp,contour_points,cutter = slice_extract(data,plane_center,plane_normal)
-	Npoints = contour_points.GetNumberOfPoints()
-	
-	X=np.zeros((3,Npoints))
-	for j in range(Npoints):
-		p=contour_points.GetPoint(j)
-		X[0,j] = p[0]+contour_disp.GetComponent(j,0)
-		X[1,j] = p[1]+contour_disp.GetComponent(j,1)
-		X[2,j] = p[2]+contour_disp.GetComponent(j,2)
-
-
-	fig.add_trace(go.Scatter3d(x=X[0,:],y=X[1,:],z=X[2,:],mode="markers",marker_color=colors[i]))
-
-fig.update_layout(scene=dict(aspectmode='data',aspectratio=dict(x=1,y=1,z=1)))
-fig.show()
+		contour_disp,contour_points,cutter = slice_extract(data,plane_center,plane_normal)
+		Npoints = contour_points.GetNumberOfPoints()
+		
+		X=np.zeros((3,Npoints))
+		for j in range(Npoints):
+			p=contour_points.GetPoint(j)
+			X[0,j] = p[0]+contour_disp.GetComponent(j,0)
+			X[1,j] = p[1]+contour_disp.GetComponent(j,1)
+			X[2,j] = p[2]+contour_disp.GetComponent(j,2)
 
 
+		fig.add_trace(go.Scatter3d(x=X[0,:],y=X[1,:],z=X[2,:],mode="markers",marker_color=colors[i]))
 
-# Visualize Slice
+	fig.update_layout(scene=dict(aspectmode='data',aspectratio=dict(x=1,y=1,z=1)))
+	fig.show()
 
-cutterMapper=vtk.vtkPolyDataMapper()
-cutterMapper.SetInputConnection(cutter.GetOutputPort())
 
-#create plane actor
-planeActor=vtk.vtkActor()
-planeActor.GetProperty().SetColor(255,255,255)
-planeActor.GetProperty().SetLineWidth(20)
-planeActor.SetMapper(cutterMapper)
+	# Visualize Slice
 
-mapper = vtk.vtkPolyDataMapper()
-mapper.SetInputData(data)
+	cutterMapper=vtk.vtkPolyDataMapper()
+	cutterMapper.SetInputConnection(cutter.GetOutputPort())
 
-actor = vtk.vtkActor()
-actor.SetMapper(mapper)
-actor.GetProperty().SetPointSize(2)
+	#create plane actor
+	planeActor=vtk.vtkActor()
+	planeActor.GetProperty().SetColor(255,255,255)
+	planeActor.GetProperty().SetLineWidth(20)
+	planeActor.SetMapper(cutterMapper)
 
-renderer = vtk.vtkRenderer()
-renderWindow = vtk.vtkRenderWindow()
-renderWindow.AddRenderer(renderer)
-renderWindowInteractor = vtk.vtkRenderWindowInteractor()
-renderWindowInteractor.SetRenderWindow(renderWindow)
+	mapper = vtk.vtkPolyDataMapper()
+	mapper.SetInputData(data)
 
-renderer.AddActor(actor)
-renderer.AddActor(planeActor)
+	actor = vtk.vtkActor()
+	actor.SetMapper(mapper)
+	actor.GetProperty().SetPointSize(2)
 
-renderWindow.Render()
-renderWindowInteractor.Start()
+	renderer = vtk.vtkRenderer()
+	renderWindow = vtk.vtkRenderWindow()
+	renderWindow.AddRenderer(renderer)
+	renderWindowInteractor = vtk.vtkRenderWindowInteractor()
+	renderWindowInteractor.SetRenderWindow(renderWindow)
+
+	renderer.AddActor(actor)
+	renderer.AddActor(planeActor)
+
+	renderWindow.Render()
+	renderWindowInteractor.Start()
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    main()
 

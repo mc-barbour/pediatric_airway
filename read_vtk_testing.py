@@ -6,7 +6,8 @@ from natsort import natsorted
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-files = glob.glob('../Patient_Data/4DCT_109/Attempt3/displacement_surfaces/*.vtk')
+files = glob.glob('../Patient_Data/Pt109/Attempt3/displacement_surfaces/*.vtk')
+#files = glob.glob('/Users/mbarbour/Dropbox/Respiratory/image_data/Pt_106/DisplacementSurfaces/*')
 files=natsorted(files)
 print(files)
 
@@ -21,7 +22,7 @@ reader.Update()
 #Load the data
 data = reader.GetOutput()
 
-print(data)
+#print(data)
 
 #Get the number of points
 Npoints = data.GetNumberOfPoints()
@@ -39,6 +40,7 @@ for i in range(Nfiles):
 pointID=50000
 
 
+
 num_polys=surface.GetNumberOfCells()
 I=np.zeros(num_polys)
 J=np.zeros(num_polys)
@@ -51,7 +53,15 @@ for i in range(num_polys):
 	K[i]=cell.GetPointId(2)
 
 fig=go.Figure()
-fig.add_trace(go.Mesh3d(x=X[0,:,0],y=X[1,:,0],z=X[2,:,0],i=I,j=J,k=K,opacity=0.5))
+fig.add_trace(go.Mesh3d(x=X[0,:,0],y=X[1,:,0],z=X[2,:,0],i=I,j=J,k=K,opacity=0.8))
+
+camera = dict(
+    up=dict(x=0, y=0, z=1),
+    center=dict(x=0, y=0, z=0),
+    eye=dict(x=-1.35, y=1.25, z=1.25)
+)
+fig.update_layout(scene_camera=camera)
+
 fig.show()
 
 

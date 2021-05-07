@@ -28,18 +28,18 @@ tidal_volume = np.trapz(flowrate_bates[zeros[0]:zeros[1]],time_bates[zeros[0]:ze
 tidal_volume = np.trapz(flowrate_bates[zeros[1]:zeros[2]],time_bates[zeros[1]:zeros[2]])
 
 
-time_infant = np.linspace(0,1.5,500)
+time_infant = np.linspace(0,1.5,len(flowrate_bates))
 
 
 f_tidal = interpolate.interp1d(time_bates,flowrate_bates)
-time=np.linspace(0,time_bates[-1],500)
+time=np.linspace(0,time_bates[-1],len(flowrate_bates))
 flowrate_shift = f_tidal(time)
 
 
 
 print(np.where(np.isclose(flowrate_shift,0,atol=50)==True)[0])
 
-zeros=[0,218,299]
+zeros=[0,36,96]
 
 maxit=100
 flowrate=flowrate_shift
@@ -47,15 +47,15 @@ i=0
 factor=2
 while i < maxit:
 	tidal_volume = np.trapz(flowrate[zeros[0]:zeros[1]],time_infant[zeros[0]:zeros[1]])
-	
+
 	print(tidal_volume)
 
 	if abs((abs(tidal_volume) - target_tidal_volume)) <= 0.02*target_tidal_volume:
 		break
-		
+
 	elif abs(tidal_volume) >= target_tidal_volume:
 		flowrate = flowrate/factor
-		
+
 
 	elif abs(tidal_volume) <= target_tidal_volume:
 		flowrate = flowrate*1.05
@@ -73,6 +73,7 @@ plt.axhline(y=0,linestyle='--',color='k',alpha=0.5)
 plt.ylabel("Flowrate (ml/s)")
 plt.xlabel("Time (s)")
 plt.title("Pt109, Tidal Volume = 54mL, I:E = 1:1.3")
+plt.show()
 plt.savefig("../Figures/waveform1.png")
 
 

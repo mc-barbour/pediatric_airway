@@ -6,6 +6,7 @@ import glob
 from natsort import natsorted
 import plotly.graph_objects as go
 import plotly.express as px
+import pyvista as pv
 
 
 
@@ -16,12 +17,18 @@ def main():
     """
 
 	# Script Inputs
-    MAKE_MOVIE = False
-    surface_directory = '/Users/mbarbour/Research/Trachea/Patient_Data/4DCT_109/Attempt3/displacement_surfaces/'
-    cl_file = '/Users/mbarbour/Research/Trachea/Patient_Data/4DCT_109/Segmentations/Processed/Pt109_centerline.dat'
-    movie_dir = '/Users/mbarbour/Research/Trachea/Patient_Data/4DCT_109/Movie/'
-    fig_dit = '/Users/mbarbour/Research/Trachea/Patient_Data/4DCT_109/Figures/'
+    MAKE_MOVIE = True
+    surface_directory = '/Users/mbarbour/Research/Trachea/Patient_Data/Pt109/Attempt3/displacement_surfaces/'
+    cl_file = '/Users/mbarbour/Research/Trachea/Patient_Data/Pt109/Segmentations/Processed/Pt109_centerline.dat'
+    movie_dir = '/Users/mbarbour/Research/Trachea/Patient_Data/Pt109/Movie/'
+    fig_dit = '/Users/mbarbour/Research/Trachea/Patient_Data/Pt109/Figures/'
 
+
+
+    # surface_directory = '/Users/mbarbour/Dropbox/Respiratory/image_data/Pt_106/DisplacementSurfaces/'
+    # cl_file = '/Users/mbarbour/Dropbox/Respiratory/image_data/Pt_106/Pt_106_centerline.dat'
+    # movie_dir = '/Users/mbarbour/Dropbox/Respiratory/image_data/Pt_106/Movie/'
+    # fig_dit = '/Users/mbarbour/Dropbox/Respiratory/image_data/Pt_106/Figures/'
     n_planes = 20
 
 	# Load surface files and centerline file
@@ -44,12 +51,16 @@ def main():
 
 
     plane_area = np.zeros((n_files, n_planes))
+    volume = np.zeros(n_files)
+
+
     contours = np.empty(n_planes,dtype=object)
 
 
 
 	# Main Loop - loop over surfaces and compute the motion
     for i in range(len(files)):
+        # print(files[i])
     # for i in range(5):
 		# Open surface and displacement fields
         surface, displacment, X = extract_surface_data(files[i])
@@ -57,15 +68,23 @@ def main():
 		# Apply surface displacment
         apply_surface_displacement(surface, displacment)
 
+        poly = pv.PolyData(surface)
+        volume[i] = poly.volume
+
         # Make movie
         if MAKE_MOVIE:
             #camera=dict(eye = dict(x=1.5, y=0.0, z=0.0))
-            camera=dict(eye = dict(x=0, y=0.0, z=1.5))
+            #camera=dict(eye = dict(x=0, y=0.0, z=1.5))
+            camera = dict(
+                up=dict(x=0, y=0, z=1),
+                center=dict(x=0, y=0, z=0),
+                eye=dict(x=-1.35, y=1.25, z=1.25)
+                )
             surf_fig = go.Figure()
-            polydata_mesh_plot(surface, surf_fig,  0.25, 'blue')
+            polydata_mesh_plot(surface, surf_fig,  0.8, 'blue')
             surf_fig.update_layout(template='plotly_white',
                                 scene_camera=camera)
-            surf_fig.write_image(movie_dir+'frame_xy_'+str(i)+'.png',scale=3)
+            surf_fig.write_image(movie_dir+'frame_ortho_'+str(i)+'.png',scale=3)
 
 		# Extract contours - plane extract and compute area
         for j in range(n_planes):
@@ -83,7 +102,6 @@ def main():
     plot_contour(contours, fig, n_planes, slices)
     polydata_mesh_plot(surface, fig, opacity=0.1)
     fig.update_layout(template='plotly_white', title='Slice Locations')
-
     fig.show()
 
 
@@ -91,7 +109,7 @@ def main():
     fig = go.Figure()
     for i in slices:
         fig.add_trace(go.Scatter(y=plane_area[:,i]/np.mean(plane_area[:,i])))
-    fig.update_layout(template='plotly_white', title='Slice Expansion')
+    fig.update_layout(template='plotly_white', title='Slice Expansion', font_size=18)
     fig.update_yaxes(title=r'$\text{Area/Time-averaged Area}, A(t)/\bar{A(t)}$')
     fig.update_xaxes(title=r"$\text{Time Steps} (\cdot)$")
     fig.show()
@@ -110,17 +128,27 @@ def main():
         title="Surface Centerlines")
     fig.show()
 
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(y = volume))
+    fig.update_layout(template='plotly_white', title='Volume', font_size=19)
+    fig.update_yaxes(title=r'$\text{Mesh Volume (mm)}$')
+    fig.update_xaxes(title='image (time)')
+    fig.show()
 
 
     # Plot peak motion for all slices at the same instant in time
     fig = go.Figure()
-    fig.add_trace(go.Scatter(y=plane_area[15,:]/np.mean(plane_area,axis=0),mode='markers+lines'))
+    num = 1
+    for tstep in (5,11):
+        fig.add_trace(go.Scatter(y=plane_area[tstep,:]/np.mean(plane_area, axis=0), mode='markers+lines', name="Inspiration Peak "+str(num)))
+        num = num + 1
+
     fig.add_shape(type='line', x0=0, y0=1, x1=len(plane_area[15,:]), y1=1,
         line=dict(
             color="grey",
             width=4,
             dash="dashdot"))
-    fig.update_layout(template='plotly_white', title='Peak Motion')
+    fig.update_layout(template='plotly_white', title='Peak Motion', font_size=19)
     fig.update_yaxes(title=r'$\text{Area/Time-averaged Area}, A(t)/\bar{A(t)}$')
     fig.update_xaxes(title='Length of Domain')
     fig.show()
